@@ -265,15 +265,15 @@ const RegionLevel: React.FC<RegionLevelProps> = ({
 );
 
 const Breadcrumb: React.FC<BreadcrumProps> = ({ data }) => (
-  <div className="flex items-center gap-1 flex-wrap">
+  <div className="breadcrumb">
     {data.map((seg: string, i: number) => (
-      <span key={`${seg}-${i}`} className="flex items-center gap-1">
-        {i > 0 && <span className="text-slate-300">›</span>}
+      <span key={`${seg}-${i}`} className="breadcrumb__item">
+        {i > 0 && <span className="breadcrumb__separator">›</span>}
         <span
           className={
             i === data.length - 1
-              ? "font-semibold text-blue-600"
-              : "text-slate-400"
+              ? "breadcrumb__label--active"
+              : "breadcrumb__label"
           }
         >
           {seg}

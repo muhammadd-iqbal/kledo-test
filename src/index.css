@@ -13,3 +13,25 @@ body {
     color-scheme: dark;
   }
 }
+
+@layer components {
+  .breadcrumb {
+    @apply flex items-center gap-1 flex-wrap;
+  }
+
+  .breadcrumb__item {
+    @apply flex items-center gap-1;
+  }
+
+  .breadcrumb__separator {
+    @apply text-slate-300;
+  }
+
+  .breadcrumb__label {
+    @apply text-slate-400;
+  }
+
+  .breadcrumb__label--active {
+    @apply font-semibold text-blue-600;
+  }
+}
