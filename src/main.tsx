@@ -176,7 +176,7 @@ interface SelectProps {
   options: SelectOption[];
   onChange: (id: number | null) => void;
   placeholder: string;
-  disabled?: boolean;
+  name: string;
 }
 
 interface BreadcrumProps {
@@ -203,7 +203,7 @@ const Select: React.FC<SelectProps> = ({
   options,
   onChange,
   placeholder,
-  disabled = false,
+  name,
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     const val = e.target.value;
@@ -222,7 +222,8 @@ const Select: React.FC<SelectProps> = ({
         <select
           value={value ?? ""}
           onChange={handleChange}
-          disabled={disabled}
+          name={name}
+          // disabled={disabled}
           className="w-full appearance-none bg-white border border-slate-200 rounded-xl pl-9 pr-9 py-2.5 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <option value="">{placeholder}</option>
@@ -315,6 +316,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
       options={provinces}
       onChange={onProvinceChange}
       placeholder="Pilih Provinsi"
+      name="province"
     />
     <Select
       label="Kota/Kabupaten"
@@ -325,7 +327,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
       placeholder={
         selectedProvinceId ? "Pilih Kota/Kab" : "— Pilih Provinsi dulu —"
       }
-      disabled={!selectedProvinceId}
+      name="regency"
     />
     <Select
       label="Kecamatan"
@@ -336,7 +338,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
       placeholder={
         selectedRegencyId ? "Pilih Kecamatan" : "— Pilih Kota dulu —"
       }
-      disabled={!selectedRegencyId}
+      name="district"
     />
 
     <div className="mt-auto pt-4">
