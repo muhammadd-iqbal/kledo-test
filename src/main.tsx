@@ -2,7 +2,7 @@ import "./index.css";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 // ── data ─────────────────────────────────────────────────────────────
@@ -493,16 +493,62 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
   </>
 );
 
+// ── Cookie helpers ─────────────────────────────────────────────────────────
+
+const COOKIE_KEY = "wilayah_filter";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days in seconds
+
+interface FilterCookie {
+  provinceId: number | null;
+  regencyId: number | null;
+  districtId: number | null;
+}
+
+function readFilterCookie(): FilterCookie {
+  const fallback: FilterCookie = {
+    provinceId: null,
+    regencyId: null,
+    districtId: null,
+  };
+  try {
+    const match = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(`${COOKIE_KEY}=`));
+    if (!match) return fallback;
+    const raw = decodeURIComponent(match.split("=").slice(1).join("="));
+    const parsed = JSON.parse(raw) as FilterCookie;
+    return {
+      provinceId:
+        typeof parsed.provinceId === "number" ? parsed.provinceId : null,
+      regencyId: typeof parsed.regencyId === "number" ? parsed.regencyId : null,
+      districtId:
+        typeof parsed.districtId === "number" ? parsed.districtId : null,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function writeFilterCookie(value: FilterCookie): void {
+  const encoded = encodeURIComponent(JSON.stringify(value));
+  document.cookie = `${COOKIE_KEY}=${encoded}; max-age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
+}
+
+function clearFilterCookie(): void {
+  document.cookie = `${COOKIE_KEY}=; max-age=0; path=/`;
+}
+
 export default function FilterPage() {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const savedCookie = readFilterCookie();
   const [selectedProvinceId, setSelectedProvinceId] = useState<number | null>(
-    null
+    savedCookie.provinceId
   );
   const [selectedRegencyId, setSelectedRegencyId] = useState<number | null>(
-    null
+    savedCookie.regencyId
   );
   const [selectedDistrictId, setSelectedDistrictId] = useState<number | null>(
-    null
+    savedCookie.districtId
   );
 
   const filteredRegencies: Regency[] = regencies.filter(
@@ -534,6 +580,7 @@ export default function FilterPage() {
     setSelectedProvinceId(null);
     setSelectedRegencyId(null);
     setSelectedDistrictId(null);
+    clearFilterCookie();
   };
 
   const breadcrumbs: string[] = [
@@ -555,6 +602,22 @@ export default function FilterPage() {
     onDistrictChange: setSelectedDistrictId,
     onReset: handleReset,
   };
+
+  useEffect(() => {
+    const hasSelection =
+      selectedProvinceId !== null ||
+      selectedRegencyId !== null ||
+      selectedDistrictId !== null;
+    if (hasSelection) {
+      writeFilterCookie({
+        provinceId: selectedProvinceId,
+        regencyId: selectedRegencyId,
+        districtId: selectedDistrictId,
+      });
+    } else {
+      clearFilterCookie();
+    }
+  }, [selectedProvinceId, selectedRegencyId, selectedDistrictId]);
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
