@@ -2,152 +2,10 @@ import "./index.css";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
 // ── data ─────────────────────────────────────────────────────────────
-
-const provinces = [
-  {
-    id: 1,
-    name: "Kepulauan Riau",
-  },
-  {
-    id: 2,
-    name: "DKI Jakarta",
-  },
-  {
-    id: 3,
-    name: "Bali",
-  },
-];
-
-const regencies = [
-  {
-    id: 1,
-    name: "Kota Batam",
-    province_id: 1,
-  },
-  {
-    id: 2,
-    name: "Kota Tanjung Pinang",
-    province_id: 1,
-  },
-  {
-    id: 3,
-    name: "Jakarta Selatan",
-    province_id: 2,
-  },
-  {
-    id: 4,
-    name: "Jakarta Barat",
-    province_id: 2,
-  },
-  {
-    id: 5,
-    name: "Kota Denpasar",
-    province_id: 3,
-  },
-  {
-    id: 6,
-    name: "Badung",
-    province_id: 3,
-  },
-];
-
-export const districts = [
-  {
-    id: 1,
-    name: "Batam Kota",
-    regency_id: 1,
-  },
-  {
-    id: 2,
-    name: "Batu Ampar",
-    regency_id: 1,
-  },
-  {
-    id: 3,
-    name: "Belakang Padang",
-    regency_id: 1,
-  },
-  {
-    id: 4,
-    name: "Bukit Bestari",
-    regency_id: 2,
-  },
-  {
-    id: 5,
-    name: "Tanjung Pinang Barat",
-    regency_id: 2,
-  },
-  {
-    id: 6,
-    name: "Tanjung Pinang Kota",
-    regency_id: 2,
-  },
-  {
-    id: 7,
-    name: "Kebayoran Baru",
-    regency_id: 3,
-  },
-  {
-    id: 8,
-    name: "Kebayoran Lama",
-    regency_id: 3,
-  },
-  {
-    id: 9,
-    name: "Cilandak",
-    regency_id: 3,
-  },
-  {
-    id: 10,
-    name: "Kebon Jeruk",
-    regency_id: 4,
-  },
-  {
-    id: 11,
-    name: "Tamansari",
-    regency_id: 4,
-  },
-  {
-    id: 12,
-    name: "Grogol Petamburan",
-    regency_id: 4,
-  },
-  {
-    id: 13,
-    name: "Denpasar Selatan",
-    regency_id: 5,
-  },
-  {
-    id: 14,
-    name: "Denpasar Barat",
-    regency_id: 5,
-  },
-  {
-    id: 15,
-    name: "Denpasar Utara",
-    regency_id: 5,
-  },
-  {
-    id: 16,
-    name: "Kuta",
-    regency_id: 6,
-  },
-  {
-    id: 17,
-    name: "Kuta Selatan",
-    regency_id: 6,
-  },
-  {
-    id: 18,
-    name: "Kuta Utara",
-    regency_id: 6,
-  },
-];
-
 interface Province {
   id: number;
   name: string;
@@ -538,6 +396,24 @@ function clearFilterCookie(): void {
   document.cookie = `${COOKIE_KEY}=; max-age=0; path=/`;
 }
 
+// ── fetch data ─────────────────────────────────────────────────────────
+interface Regions {
+  districts: District[];
+  provinces: Province[];
+  regencies: Regency[];
+}
+
+async function readjson(): Promise<Regions | null> {
+  const result = await fetch("/data/indonesia_regions.json");
+
+  if (!result.ok) {
+    return null;
+  }
+  const data = await result.json();
+
+  return data as Regions;
+}
+
 export default function FilterPage() {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const savedCookie = readFilterCookie();
@@ -550,20 +426,22 @@ export default function FilterPage() {
   const [selectedDistrictId, setSelectedDistrictId] = useState<number | null>(
     savedCookie.districtId
   );
+  const [regions, setRegions] = useState<Regions | null>(null);
+  const intialRender = useRef(true);
 
-  const filteredRegencies: Regency[] = regencies.filter(
-    (r) => r.province_id === selectedProvinceId
-  );
-  const filteredDistricts: District[] = districts.filter(
-    (d) => d.regency_id === selectedRegencyId
-  );
+  const filteredRegencies: Regency[] = regions
+    ? regions.regencies.filter((r) => r.province_id === selectedProvinceId)
+    : [];
+  const filteredDistricts: District[] = regions
+    ? regions.districts.filter((d) => d.regency_id === selectedRegencyId)
+    : [];
 
   const selectedProvince =
-    provinces.find((p) => p.id === selectedProvinceId) ?? null;
+    regions?.provinces?.find((p) => p.id === selectedProvinceId) ?? null;
   const selectedRegency =
-    regencies.find((r) => r.id === selectedRegencyId) ?? null;
+    regions?.regencies?.find((r) => r.id === selectedRegencyId) ?? null;
   const selectedDistrict =
-    districts.find((d) => d.id === selectedDistrictId) ?? null;
+    regions?.districts?.find((d) => d.id === selectedDistrictId) ?? null;
 
   const handleProvinceChange = (id: number | null): void => {
     setSelectedProvinceId(id);
@@ -583,6 +461,11 @@ export default function FilterPage() {
     clearFilterCookie();
   };
 
+  const fetchRegions = async () => {
+    const result = await readjson();
+    setRegions(result);
+  };
+
   const breadcrumbs: string[] = [
     "Indonesia",
     ...(selectedProvince ? [selectedProvince.name] : []),
@@ -591,7 +474,7 @@ export default function FilterPage() {
   ];
 
   const sidebarProps: SidebarContentProps = {
-    provinces,
+    provinces: regions ? regions.provinces : [],
     filteredRegencies,
     filteredDistricts,
     selectedProvinceId,
@@ -608,6 +491,12 @@ export default function FilterPage() {
       selectedProvinceId !== null ||
       selectedRegencyId !== null ||
       selectedDistrictId !== null;
+
+    if (intialRender.current) {
+      fetchRegions();
+      intialRender.current = false;
+    }
+
     if (hasSelection) {
       writeFilterCookie({
         provinceId: selectedProvinceId,
